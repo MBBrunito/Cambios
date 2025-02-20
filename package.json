@@ -1,18 +1,19 @@
 {
-  "name": "control-cambios",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@prisma/client": "^6.3.1",
-    "next": "15.1.7",
-    "prisma": "^6.3.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  }
+   "name": "control-cambios",
+   "version": "0.1.0",
+   "private": true,
+   "scripts": {
+      "dev": "next dev --turbopack",
+      "build": "prisma generate && next build",
+      "start": "next start",
+      "lint": "next lint",
+      "postinstall": "prisma generate"
+   },
+   "dependencies": {
+      "@prisma/client": "^6.3.1",
+      "next": "15.1.7",
+      "prisma": "^6.3.1",
+      "react": "^19.0.0",
+      "react-dom": "^19.0.0"
+   }
 }
