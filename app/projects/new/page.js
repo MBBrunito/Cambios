@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 export default function NewProjectPage() {
    const [title, setTitle] = useState("");
    const [content, setContent] = useState("");
-   const [tasks, setTasks] = useState([]);
+   const [tasks, setTasks] = useState([""]); // Inicialmente una tarea vacía
    const [startDate, setStartDate] = useState("");
    const [userId, setUserId] = useState("");
    const [users, setUsers] = useState([]);
@@ -23,6 +23,21 @@ export default function NewProjectPage() {
          });
    }, []);
 
+   const addTask = () => {
+      setTasks([...tasks, ""]); // Agregar una tarea vacía
+   };
+
+   const updateTask = (index, value) => {
+      const newTasks = [...tasks];
+      newTasks[index] = value;
+      setTasks(newTasks);
+   };
+
+   const removeTask = (index) => {
+      const newTasks = tasks.filter((_, i) => i !== index);
+      setTasks(newTasks);
+   };
+
    const handleSubmit = async (e) => {
       e.preventDefault();
       setLoading(true);
@@ -33,7 +48,7 @@ export default function NewProjectPage() {
          body: JSON.stringify({
             title,
             content,
-            tasks,
+            tasks, // Ahora enviamos las tareas dinámicas
             start_date: startDate,
             end_date: null,
             status: "No iniciado",
@@ -75,6 +90,36 @@ export default function NewProjectPage() {
                   required
                />
             </div>
+            <div>
+               <label className="block">Tareas:</label>
+               {tasks.map((task, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                     <input
+                        type="text"
+                        value={task}
+                        onChange={(e) => updateTask(index, e.target.value)}
+                        className="border p-2 w-full"
+                        placeholder={`Tarea ${index + 1}`}
+                        required
+                     />
+                     <button
+                        type="button"
+                        onClick={() => removeTask(index)}
+                        className="bg-red-500 text-white px-2 py-1 rounded"
+                     >
+                        ✖
+                     </button>
+                  </div>
+               ))}
+               <button
+                  type="button"
+                  onClick={addTask}
+                  className="bg-green-500 text-white px-4 py-2 rounded"
+               >
+                  + Agregar Tarea
+               </button>
+            </div>
+
             <div>
                <label className="block">Fecha de inicio:</label>
                <input

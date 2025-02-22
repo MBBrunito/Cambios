@@ -1,11 +1,50 @@
 import prisma from "@/utils/prisma";
 
-export async function GET() {
+export async function GET(req) {
    try {
+      const { searchParams } = new URL(req.url);
+      const search = searchParams.get("search") || "";
+      const status = searchParams.get("status") || "";
+      const userId = searchParams.get("userId") || "";
+      const orderBy = searchParams.get("orderBy") || "start_date";
+      const orderDirection = searchParams.get("orderDirection") || "asc";
+      const page = parseInt(searchParams.get("page")) || 1;
+      const limit = parseInt(searchParams.get("limit")) || 5;
+
+      const skip = (page - 1) * limit;
+
+      // Contar solo los proyectos que cumplen los filtros
+      const totalProjects = await prisma.project.count({
+         where: {
+            AND: [
+               search
+                  ? { title: { contains: search, mode: "insensitive" } }
+                  : {},
+               status ? { status } : {},
+               userId ? { userId } : {},
+            ],
+         },
+      });
+
       const projects = await prisma.project.findMany({
+         where: {
+            AND: [
+               search
+                  ? { title: { contains: search, mode: "insensitive" } }
+                  : {},
+               status ? { status } : {},
+               userId ? { userId } : {},
+            ],
+         },
+         orderBy: { [orderBy]: orderDirection },
+         skip,
+         take: limit,
          include: { user: true },
       });
-      return Response.json({ success: true, projects });
+
+      const totalPages = Math.ceil(totalProjects / limit);
+
+      return Response.json({ success: true, projects, totalPages });
    } catch (error) {
       console.error("Error obteniendo proyectos:", error);
       return Response.json(
