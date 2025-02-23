@@ -8,6 +8,8 @@ export default function UsersPage() {
    const [loading, setLoading] = useState(false);
    const [error, setError] = useState(null);
    const [editingUser, setEditingUser] = useState(null);
+   const [currentUser, setCurrentUser] = useState({ role: "ADMIN" });
+   const [role, setRole] = useState("USER"); // USER por defecto
 
    useEffect(() => {
       fetchUsers();
@@ -19,7 +21,7 @@ export default function UsersPage() {
          const res = await fetch("/api/users");
          const data = await res.json();
          if (data.success) {
-            setUsers(data.users);
+            setUsers(data.users.filter((user) => user.active)); // Filtrar solo usuarios activos
          } else {
             setError(data.error);
          }
@@ -33,10 +35,14 @@ export default function UsersPage() {
       e.preventDefault();
       setLoading(true);
 
+      const userData = { name, email, role };
+
+      console.log("Enviando usuario:", userData); // Debug para ver qué se envía
+
       const response = await fetch("/api/users", {
          method: "POST",
          headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ name, email }),
+         body: JSON.stringify(userData),
       });
 
       const data = await response.json();
@@ -44,6 +50,68 @@ export default function UsersPage() {
          setUsers([...users, data.user]);
          setName("");
          setEmail("");
+         setRole("USER"); // Reiniciar a USER por defecto
+      } else {
+         setError(data.error);
+      }
+
+      setLoading(false);
+   };
+
+   const handleDeleteUser = async (id) => {
+      if (!confirm("¿Estás seguro de que quieres eliminar este usuario?"))
+         return;
+
+      setLoading(true);
+
+      try {
+         console.log("Enviando solicitud DELETE con ID:", id); // 🛠 Debug
+
+         const response = await fetch(`/api/users/${id}`, {
+            // Enviar ID en la URL
+            method: "DELETE",
+         });
+
+         if (!response.ok) {
+            throw new Error(`Error en la eliminación: ${response.status}`);
+         }
+
+         const data = await response.json();
+
+         if (data.success) {
+            setUsers(users.filter((user) => user.id !== id));
+         } else {
+            console.error("Error eliminando usuario:", data.error);
+         }
+      } catch (err) {
+         console.error("Error en la eliminación:", err);
+      }
+
+      setLoading(false);
+   };
+
+   const handleUpdateUser = async (e) => {
+      e.preventDefault();
+      setLoading(true);
+
+      const updatedData = { id: editingUser.id, name, email, role };
+      console.log("Actualizando usuario:", updatedData); // Debug
+
+      const response = await fetch("/api/users", {
+         method: "PUT",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify(updatedData),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+         setUsers(
+            users.map((user) => (user.id === editingUser.id ? data.user : user))
+         );
+         setEditingUser(null);
+         setName("");
+         setEmail("");
+         setRole("USER"); // Reiniciar el rol a USER por defecto
       } else {
          setError(data.error);
       }
@@ -55,51 +123,7 @@ export default function UsersPage() {
       setEditingUser(user);
       setName(user.name);
       setEmail(user.email);
-   };
-
-   const handleDeleteUser = async (id) => {
-      if (!confirm("¿Estás seguro de que quieres eliminar este usuario?"))
-         return;
-
-      setLoading(true);
-      const response = await fetch("/api/users", {
-         method: "DELETE",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ id }),
-      });
-
-      if (response.ok) {
-         setUsers(users.filter((user) => user.id !== id));
-      } else {
-         console.error("Error eliminando usuario:", await response.json());
-      }
-
-      setLoading(false);
-   };
-
-   const handleUpdateUser = async (e) => {
-      e.preventDefault();
-      setLoading(true);
-
-      const response = await fetch("/api/users", {
-         method: "PUT",
-         headers: { "Content-Type": "application/json" },
-         body: JSON.stringify({ id: editingUser.id, name, email }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-         setUsers(
-            users.map((user) => (user.id === editingUser.id ? data.user : user))
-         );
-         setEditingUser(null);
-         setName("");
-         setEmail("");
-      } else {
-         setError(data.error);
-      }
-
-      setLoading(false);
+      setRole(user.role);
    };
 
    const handleCancelEdit = () => {
@@ -133,21 +157,46 @@ export default function UsersPage() {
                className="border p-2 w-full"
                required
             />
-            <button
-               type="submit"
-               className={`px-4 py-2 rounded ${
-                  loading
-                     ? "bg-gray-400 cursor-not-allowed"
-                     : "bg-blue-500 text-white"
-               }`}
-               disabled={loading}
-            >
-               {loading
-                  ? "Guardando..."
-                  : editingUser
-                  ? "Actualizar Usuario"
-                  : "Agregar Usuario"}
-            </button>
+            <div>
+               <label className="block">Rol:</label>
+               <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="border p-2 w-full"
+                  required
+               >
+                  <option value="USER">Usuario</option>
+                  <option value="ADMIN">Administrador</option>
+               </select>
+            </div>
+
+            {currentUser.role === "ADMIN" && (
+               <button
+                  type="submit"
+                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                  disabled={loading}
+               >
+                  {loading
+                     ? "Guardando..."
+                     : editingUser
+                     ? "Actualizar Usuario"
+                     : "Agregar Usuario"}
+               </button>
+            )}
+
+            {/* {editingUser && (
+               <div>
+                  <label className="block">Rol:</label>
+                  <select
+                     value={role}
+                     onChange={(e) => setRole(e.target.value)}
+                     className="border p-2 w-full"
+                  >
+                     <option value="USER">Usuario</option>
+                     <option value="ADMIN">Administrador</option>
+                  </select>
+               </div>
+            )} */}
             {editingUser && (
                <button
                   type="button"
@@ -170,6 +219,7 @@ export default function UsersPage() {
                   <tr className="bg-gray-200">
                      <th className="border p-2">Nombre</th>
                      <th className="border p-2">Email</th>
+                     <th className="border p-2">Rol</th>
                      <th className="border p-2">Acciones</th>
                   </tr>
                </thead>
@@ -179,6 +229,7 @@ export default function UsersPage() {
                         <tr key={user.id} className="border">
                            <td className="p-2">{user.name}</td>
                            <td className="p-2">{user.email}</td>
+                           <td className="p-2">{user.role}</td>
                            <td className="p-2 flex gap-2">
                               <button
                                  onClick={() => handleEditUser(user)}
@@ -186,18 +237,20 @@ export default function UsersPage() {
                               >
                                  Editar
                               </button>
-                              <button
-                                 onClick={() => handleDeleteUser(user.id)}
-                                 className="bg-red-500 text-white px-2 py-1 rounded"
-                              >
-                                 Eliminar
-                              </button>
+                              {user.role !== "ADMIN" && (
+                                 <button
+                                    onClick={() => handleDeleteUser(user.id)}
+                                    className="bg-red-500 text-white px-2 py-1 rounded"
+                                 >
+                                    Eliminar
+                                 </button>
+                              )}
                            </td>
                         </tr>
                      ))
                   ) : (
                      <tr>
-                        <td colSpan="3" className="text-center p-4">
+                        <td colSpan="4" className="text-center p-4">
                            No hay usuarios registrados.
                         </td>
                      </tr>

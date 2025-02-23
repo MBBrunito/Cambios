@@ -14,15 +14,22 @@ export default function NewProjectPage() {
    const router = useRouter();
 
    useEffect(() => {
-      fetch("/api/users")
-         .then((res) => res.json())
-         .then((data) => {
+      const fetchUsers = async () => {
+         try {
+            const res = await fetch("/api/users");
+            const data = await res.json();
             if (data.success) {
-               setUsers(data.users);
+               setUsers(data.users.filter((user) => user.active)); // Filtrar solo usuarios activos
             }
-         });
+         } catch (err) {
+            console.error("Error cargando usuarios:", err);
+         }
+      };
+
+      fetchUsers();
    }, []);
 
+   // Función para agregar una nueva tarea
    const addTask = () => {
       setTasks([...tasks, ""]); // Agregar una tarea vacía
    };

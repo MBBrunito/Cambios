@@ -27,6 +27,8 @@ export default function EditProjectPage() {
             const projectData = await projectRes.json();
             const usersData = await usersRes.json();
 
+            console.log("Usuarios obtenidos:", usersData); // 🛠 Depuración
+
             if (projectData.success) {
                const project = projectData.project;
                setTitle(project.title);
@@ -41,10 +43,14 @@ export default function EditProjectPage() {
             }
 
             if (usersData.success) {
-               setUsers(usersData.users);
+               console.log(
+                  "Usuarios activos:",
+                  usersData.users.filter((user) => user.active)
+               ); // 🛠 Verificar usuarios activos
+               setUsers(usersData.users.filter((user) => user.active));
             }
 
-            setLoading(false); // Desactivar carga cuando todo está listo
+            setLoading(false);
          } catch (error) {
             console.error("Error al cargar datos:", error);
             setLoading(false);
